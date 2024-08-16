@@ -86,3 +86,20 @@ func storeFile(hex string) (string, error) {
 
 	return dstPath, nil
 }
+
+// GetSecret reads a given secret, decrypts it and returns it
+// Currently does not support subdirectories
+// TODO(spyrosmoux) should be able to get secrets in subdirectories
+func GetSecret(secret string) (string, error) {
+	hex, err := os.ReadFile(storageLocation + "/" + secret)
+	if err != nil {
+		return "", err
+	}
+
+	decryptedSecret, err := helpers.DecryptAES([]byte(cipherKey), string(hex))
+	if err != nil {
+		return "", err
+	}
+
+	return decryptedSecret, nil
+}

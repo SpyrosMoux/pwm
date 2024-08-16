@@ -22,6 +22,8 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -39,13 +41,16 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	Args:    cobra.ExactArgs(1),
+	Example: "pwm mysecret  Will print the decrypted secret",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		err := cmd.Help()
+		secret, err := GetSecret(args[0])
 		if err != nil {
-			panic(err)
+			log.Fatalf(err.Error())
 		}
+		fmt.Println(secret)
 	},
 }
 
@@ -67,7 +72,7 @@ func init() {
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pwm.yaml)")
 	rootCmd.PersistentFlags().StringVar(&storageLocation, "location", storageLocation, "The directory to store the "+
-		"secrets. (Defaults to $HOME/.pwm)")
+		"secrets.")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

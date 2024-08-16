@@ -31,15 +31,15 @@ func EncryptAES(key []byte, plaintext string) string {
 }
 
 // DecryptAES decrypts the hex-encoded ciphertext using the AES key and returns the plaintext.
-func DecryptAES(key []byte, ciphertext string) (string, error) {
+func DecryptAES(cipherKey []byte, hexToDecode string) (string, error) {
 	// Decode the hex string to bytes
-	cipherBytes, err := hex.DecodeString(ciphertext)
+	cipherBytes, err := hex.DecodeString(hexToDecode)
 	if err != nil {
 		return "", err
 	}
 
 	// create cipher
-	c, err := aes.NewCipher(key)
+	c, err := aes.NewCipher(cipherKey)
 	if err != nil {
 		return "", err
 	}
