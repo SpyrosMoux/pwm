@@ -5,6 +5,8 @@ import (
 	"github.com/spyrosmoux/pwm/helpers"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 const cipherKey = "thisis32bitlongpassphraseimusing" // TODO(spyrosmoux) make this secret
@@ -27,6 +29,31 @@ func CreateUserPassSecret() string {
 func CreateEmailPassSecret() string {
 	// TODO(spyrosmoux) implement email password recipe
 	panic("implement me")
+}
+
+func ListSecrets(path string, level int) error {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for i, file := range files {
+		prefix := strings.Repeat("│   ", level)
+		if i == len(files)-1 {
+			fmt.Printf("%s└── %s\n", prefix, file.Name())
+		} else {
+			fmt.Printf("%s├── %s\n", prefix, file.Name())
+		}
+
+		if file.IsDir() {
+			err := ListSecrets(filepath.Join(storageLocation, file.Name()), level+1)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // storeFile stores a secret in a default or user-defined directory
