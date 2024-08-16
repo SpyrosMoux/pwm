@@ -31,6 +31,8 @@ func CreateEmailPassSecret() string {
 	panic("implement me")
 }
 
+// ListSecrets prints a tree with the files stored in the
+// default or user-defined directory provided by the --location flag
 func ListSecrets(path string, level int) error {
 	files, err := os.ReadDir(path)
 	if err != nil {
