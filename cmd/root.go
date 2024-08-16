@@ -27,6 +27,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var storageLocation string
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "pwm",
@@ -60,8 +62,12 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
+	homeDir, _ := os.UserHomeDir()
+	storageLocation = homeDir + "/.pwm"
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pwm.yaml)")
+	rootCmd.PersistentFlags().StringVar(&storageLocation, "location", storageLocation, "The directory to store the "+
+		"secrets. (Defaults to $HOME/.pwm)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
