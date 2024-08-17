@@ -16,12 +16,12 @@ var rmCmd = &cobra.Command{
 	Long:  ``,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := DeleteSecret(args[0])
+		err := RemoveSecret(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Println("Deleted secret:", args[0])
+		fmt.Println("Removed secret:", args[0])
 	},
 }
 

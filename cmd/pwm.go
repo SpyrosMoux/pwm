@@ -109,7 +109,7 @@ func GetSecret(secret string) (string, error) {
 	return decryptedSecret, nil
 }
 
-func DeleteSecret(secret string) error {
+func RemoveSecret(secret string) error {
 	_, err := os.Stat(storageLocation + "/" + secret)
 	if err != nil {
 		return err
