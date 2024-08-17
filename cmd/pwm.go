@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spyrosmoux/pwm/helpers"
+	"github.com/spyrosmoux/pwm/models"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,24 +12,29 @@ import (
 
 const cipherKey = "thisis32bitlongpassphraseimusing" // TODO(spyrosmoux) make this secret
 
-func CreateUserPassSecret() string {
+func CreateSecret(secretName string) string {
+	url := helpers.StringInput("Enter a url for your secret: ")
 	username := helpers.StringInput("Enter username: ")
 	password := helpers.SecretInput("Enter password: ")
+	description := helpers.StringInput("Enter a description: ")
 
-	plaintext := fmt.Sprintf("%s\n%s", username, password)
+	secret := models.Secret{
+		Name:        secretName,
+		Url:         url,
+		Username:    username,
+		Password:    password,
+		Description: description,
+	}
+
+	plaintext := secret.ToString()
 	hex := helpers.EncryptAES([]byte(cipherKey), plaintext)
 
-	dstPath, err := storeFile(hex)
+	dstPath, err := storeFile(secret.Name, hex)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return "Secret created at " + dstPath
-}
-
-func CreateEmailPassSecret() string {
-	// TODO(spyrosmoux) implement email password recipe
-	panic("implement me")
 }
 
 // ListSecrets prints a tree with the files stored in the
@@ -60,7 +66,7 @@ func ListSecrets(path string, level int) error {
 
 // storeFile stores a secret in a default or user-defined directory
 // provided by the --location flag
-func storeFile(hex string) (string, error) {
+func storeFile(secretName string, hex string) (string, error) {
 	_, err := os.Stat(storageLocation)
 	if err != nil {
 		err := os.Mkdir(storageLocation, os.ModePerm)
@@ -69,7 +75,6 @@ func storeFile(hex string) (string, error) {
 		}
 	}
 
-	secretName := helpers.StringInput("Name your secret: ")
 	dstPath := storageLocation + "/" + secretName
 
 	dstFile, err := os.Create(dstPath)
