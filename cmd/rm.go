@@ -11,9 +11,8 @@ import (
 
 // rmCmd represents the rm command
 var rmCmd = &cobra.Command{
-	Use:   "rm",
+	Use:   "rm <your_secret>",
 	Short: "Removes a secret",
-	Long:  ``,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		err := RemoveSecret(args[0])
