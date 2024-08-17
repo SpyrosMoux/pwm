@@ -47,7 +47,7 @@ func CreateSecret(secretName string) string {
 		Description: description,
 	}
 
-	plaintext := secret.ToString()
+	plaintext := secret.String()
 	hex := helpers.EncryptAES([]byte(cipherKey), plaintext)
 
 	dstPath, err := storeFile(secret.Name, hex)
