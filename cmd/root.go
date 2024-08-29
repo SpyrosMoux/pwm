@@ -35,16 +35,23 @@ var storageLocation string
 var rootCmd = &cobra.Command{
 	Use:     "pwm",
 	Short:   "A simple password management tool",
-	Args:    cobra.ExactArgs(1),
 	Example: "pwm <my_secret>  Will print the decrypted secret",
+	Args:    cobra.MinimumNArgs(0),
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		secret, err := GetSecret(args[0])
-		if err != nil {
-			log.Fatalf(err.Error())
+		switch len(args) {
+		case 0:
+			cmd.HelpFunc()(cmd, args)
+			os.Exit(0)
+		case 1:
+			secret, err := GetSecret(args[0])
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(secret)
+			os.Exit(0)
 		}
-		fmt.Println(secret)
 	},
 }
 
@@ -70,6 +77,4 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
