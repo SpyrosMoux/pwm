@@ -22,62 +22,60 @@ func (secret Secret) String() string {
 		secret.Description)
 }
 
-func (secret Secret) Encrypt(cipherKey []byte) (Secret, error) {
+func (secret Secret) Encrypt(cipherKey []byte) error {
 	urlHex, err := crypto.EncryptAES(cipherKey, secret.Url)
 	if err != nil {
-		return Secret{}, err
+		return err
 	}
 
 	usernameHex, err := crypto.EncryptAES(cipherKey, secret.Username)
 	if err != nil {
-		return Secret{}, err
+		return err
 	}
 
 	passwordHex, err := crypto.EncryptAES(cipherKey, secret.Password)
 	if err != nil {
-		return Secret{}, err
+		return err
 	}
 
 	descriptionHex, err := crypto.EncryptAES(cipherKey, secret.Description)
 	if err != nil {
-		return Secret{}, err
+		return err
 	}
 
-	return Secret{
-		Name:        secret.Name,
-		Url:         urlHex,
-		Username:    usernameHex,
-		Password:    passwordHex,
-		Description: descriptionHex,
-	}, nil
+	secret.Url = urlHex
+	secret.Username = usernameHex
+	secret.Password = passwordHex
+	secret.Description = descriptionHex
+
+	return nil
 }
 
-func (secret Secret) Decrypt(cipherKey []byte) (Secret, error) {
+func (secret Secret) Decrypt(cipherKey []byte) error {
 	urlString, err := crypto.DecryptAES(cipherKey, secret.Url)
 	if err != nil {
-		return Secret{}, err
+		return err
 	}
 
 	usernameString, err := crypto.DecryptAES(cipherKey, secret.Username)
 	if err != nil {
-		return Secret{}, err
+		return err
 	}
 
 	passwordString, err := crypto.DecryptAES(cipherKey, secret.Password)
 	if err != nil {
-		return Secret{}, err
+		return err
 	}
 
 	descriptionString, err := crypto.DecryptAES(cipherKey, secret.Description)
 	if err != nil {
-		return Secret{}, err
+		return err
 	}
 
-	return Secret{
-		Name:        secret.Name,
-		Url:         urlString,
-		Username:    usernameString,
-		Password:    passwordString,
-		Description: descriptionString,
-	}, nil
+	secret.Url = urlString
+	secret.Username = usernameString
+	secret.Password = passwordString
+	secret.Description = descriptionString
+
+	return nil
 }

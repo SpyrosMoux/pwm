@@ -16,8 +16,8 @@ import (
 )
 
 type Secreter interface {
-	Encrypt([]byte) (models.Secret, error)
-	Decrypt([]byte) (models.Secret, error)
+	Encrypt([]byte) error
+	Decrypt([]byte) error
 }
 
 // TODO(spyrosmoux) make this secret
@@ -39,17 +39,17 @@ func CreateSecret(secretName string) string {
 		Description: description,
 	}
 
-	encryptedSecret, err := Secreter.Encrypt(&secret, []byte(cipherKey))
+	err := Secreter.Encrypt(&secret, []byte(cipherKey))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	jsonSecret, err := json.Marshal(encryptedSecret)
+	jsonSecret, err := json.Marshal(secret)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	dstPath, err := storeFile(encryptedSecret.Name, jsonSecret)
+	dstPath, err := storeFile(secret.Name, jsonSecret)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -127,12 +127,12 @@ func GetSecret(secret string) (decryptedSecret string, err error) {
 		return
 	}
 
-	unencryptedSecret, err := Secreter.Decrypt(&jsonSecret, []byte(cipherKey))
+	err = Secreter.Decrypt(&jsonSecret, []byte(cipherKey))
 	if err != nil {
 		return "", err
 	}
 
-	return unencryptedSecret.String(), nil
+	return jsonSecret.String(), nil
 }
 
 func RemoveSecret(secret string) error {
@@ -180,10 +180,10 @@ func readSecretIntoStruct(secret string) (models.Secret, error) {
 		return models.Secret{}, err
 	}
 
-	unencryptedSecret, err := Secreter.Decrypt(&jsonSecret, []byte(cipherKey))
+	err = Secreter.Decrypt(&jsonSecret, []byte(cipherKey))
 	if err != nil {
 		return models.Secret{}, err
 	}
 
-	return unencryptedSecret, nil
+	return jsonSecret, nil
 }
