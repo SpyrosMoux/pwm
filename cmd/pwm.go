@@ -1,37 +1,29 @@
 /*
 Copyright © 2024 Spyros Mouchlianitis
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
 */
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/spyrosmoux/pwm/helpers"
-	"github.com/spyrosmoux/pwm/models"
+	"github.com/spyrosmoux/pwm/internal/helpers"
+	"github.com/spyrosmoux/pwm/internal/models"
+	"golang.design/x/clipboard"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-const cipherKey = "thisis32bitlongpassphraseimusing" // TODO(spyrosmoux) make this secret
+type Secreter interface {
+	Encrypt([]byte) (models.Secret, error)
+	Decrypt([]byte) (models.Secret, error)
+}
+
+// TODO(spyrosmoux) make this secret
+// perhaps use an init command to set it, along with the storage location ?
+// could also be useful in case of master password!
+const cipherKey = "thisis32bitlongpassphraseimusing"
 
 func CreateSecret(secretName string) string {
 	url := helpers.StringInput("Enter a url for your secret: ")
@@ -47,10 +39,17 @@ func CreateSecret(secretName string) string {
 		Description: description,
 	}
 
-	plaintext := secret.String()
-	hex := helpers.EncryptAES([]byte(cipherKey), plaintext)
+	encryptedSecret, err := Secreter.Encrypt(&secret, []byte(cipherKey))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	dstPath, err := storeFile(secret.Name, hex)
+	jsonSecret, err := json.Marshal(encryptedSecret)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dstPath, err := storeFile(encryptedSecret.Name, jsonSecret)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,7 +86,7 @@ func ListSecrets(path string, level int) error {
 
 // storeFile stores a secret in a default or user-defined directory
 // provided by the --location flag
-func storeFile(secretName string, hex string) (string, error) {
+func storeFile(secretName string, hex []byte) (string, error) {
 	_, err := os.Stat(storageLocation)
 	if err != nil {
 		err := os.Mkdir(storageLocation, os.ModePerm)
@@ -116,18 +115,24 @@ func storeFile(secretName string, hex string) (string, error) {
 // GetSecret reads a given secret, decrypts it and returns it
 // Currently does not support subdirectories
 // TODO(spyrosmoux) should be able to get secrets in subdirectories
-func GetSecret(secret string) (string, error) {
+func GetSecret(secret string) (decryptedSecret string, err error) {
 	hex, err := os.ReadFile(storageLocation + "/" + secret)
 	if err != nil {
-		return "", err
+		return
 	}
 
-	decryptedSecret, err := helpers.DecryptAES([]byte(cipherKey), string(hex))
+	var jsonSecret models.Secret
+	err = json.Unmarshal(hex, &jsonSecret)
+	if err != nil {
+		return
+	}
+
+	unencryptedSecret, err := Secreter.Decrypt(&jsonSecret, []byte(cipherKey))
 	if err != nil {
 		return "", err
 	}
 
-	return decryptedSecret, nil
+	return unencryptedSecret.String(), nil
 }
 
 func RemoveSecret(secret string) error {
@@ -142,4 +147,43 @@ func RemoveSecret(secret string) error {
 	}
 
 	return nil
+}
+
+func CopySecret(secretName string) error {
+	fmt.Println("Copying secret " + secretName)
+
+	// Init returns an error if the package is not ready for use.
+	err := clipboard.Init()
+	if err != nil {
+		return err
+	}
+
+	secret, err := readSecretIntoStruct(secretName)
+	if err != nil {
+		return err
+	}
+
+	clipboard.Write(clipboard.FmtText, []byte(secret.Password))
+
+	return nil
+}
+
+func readSecretIntoStruct(secret string) (models.Secret, error) {
+	hex, err := os.ReadFile(storageLocation + "/" + secret)
+	if err != nil {
+		return models.Secret{}, err
+	}
+
+	var jsonSecret models.Secret
+	err = json.Unmarshal(hex, &jsonSecret)
+	if err != nil {
+		return models.Secret{}, err
+	}
+
+	unencryptedSecret, err := Secreter.Decrypt(&jsonSecret, []byte(cipherKey))
+	if err != nil {
+		return models.Secret{}, err
+	}
+
+	return unencryptedSecret, nil
 }
