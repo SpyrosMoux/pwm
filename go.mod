@@ -1,4 +1,4 @@
-module github.com/spyrosmoux/pwm
+module github.com/SpyrosMoux/pwm
 
 go 1.22.6
 

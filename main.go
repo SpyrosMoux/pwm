@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/spyrosmoux/pwm/cmd"
+import "github.com/SpyrosMoux/pwm/cmd"
 
 func main() {
 	cmd.Execute()

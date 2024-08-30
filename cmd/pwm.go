@@ -6,13 +6,14 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/spyrosmoux/pwm/internal/helpers"
-	"github.com/spyrosmoux/pwm/internal/models"
-	"golang.design/x/clipboard"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/SpyrosMoux/pwm/internal/helpers"
+	"github.com/SpyrosMoux/pwm/internal/models"
+	"golang.design/x/clipboard"
 )
 
 type Secreter interface {

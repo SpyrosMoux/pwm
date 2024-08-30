@@ -5,7 +5,8 @@ package models
 
 import (
 	"fmt"
-	"github.com/spyrosmoux/pwm/internal/crypto"
+
+	"github.com/SpyrosMoux/pwm/internal/crypto"
 )
 
 type Secret struct {
