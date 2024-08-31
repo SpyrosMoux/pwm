@@ -6,10 +6,12 @@ package helpers
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/term"
 	"os"
 	"strings"
 	"syscall"
+
+	"github.com/SpyrosMoux/passwdgen"
+	"golang.org/x/term"
 )
 
 func StringInput(inputLabel string) string {
@@ -42,6 +44,14 @@ func SecretInput(inputLabel string) string {
 
 		i, _ := term.ReadPassword(int(syscall.Stdin))
 		input = string(i)
+
+		options := passwdgen.NewRandomStringOptions()
+
+		if input == "a" {
+			input = passwdgen.RandomStringNumbersSymbols(&options)
+			fmt.Printf("\nGenerated password: %s", input)
+			break
+		}
 
 		if input != "" {
 			break

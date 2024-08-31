@@ -23,7 +23,7 @@ func (secret Secret) String() string {
 		secret.Description)
 }
 
-func (secret Secret) Encrypt(cipherKey []byte) error {
+func (secret *Secret) Encrypt(cipherKey []byte) error {
 	urlHex, err := crypto.EncryptAES(cipherKey, secret.Url)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func (secret Secret) Encrypt(cipherKey []byte) error {
 	return nil
 }
 
-func (secret Secret) Decrypt(cipherKey []byte) error {
+func (secret *Secret) Decrypt(cipherKey []byte) error {
 	urlString, err := crypto.DecryptAES(cipherKey, secret.Url)
 	if err != nil {
 		return err

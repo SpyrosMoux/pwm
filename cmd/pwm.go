@@ -29,7 +29,7 @@ const cipherKey = "thisis32bitlongpassphraseimusing"
 func CreateSecret(secretName string) string {
 	url := helpers.StringInput("Enter a url for your secret: ")
 	username := helpers.StringInput("Enter username: ")
-	password := helpers.SecretInput("Enter password: ")
+	password := helpers.SecretInput("Enter password ('a' to autogenerate): ")
 	description := helpers.StringInput("Enter a description: ")
 
 	secret := models.Secret{
