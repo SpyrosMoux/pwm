@@ -1,12 +1,13 @@
 /*
-Copyright © 2024 Spyros Mouchlianitis
+Copyright © 2026 Spyros Mouchlianitis
 */
 package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"log"
+
+	"github.com/spf13/cobra"
 )
 
 // cpCmd represents the cp command

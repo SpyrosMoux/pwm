@@ -1,5 +1,5 @@
 /*
-Copyright © 2024 Spyros Mouchlianitis
+Copyright © 2026 Spyros Mouchlianitis
 */
 package helpers
 

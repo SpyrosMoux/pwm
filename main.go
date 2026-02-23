@@ -1,5 +1,5 @@
 /*
-Copyright © 2024 Spyros Mouchlianitis
+Copyright © 2026 Spyros Mouchlianitis
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
