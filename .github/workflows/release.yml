@@ -9,8 +9,44 @@ permissions:
     contents: write
 
 jobs:
-    build-and-release:
-        runs-on: ubuntu-latest
+    build:
+        name: Build ${{ matrix.name }}
+        runs-on: ${{ matrix.runs_on }}
+
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    # Linux
+                    -   name: linux-amd64
+                        runs_on: ubuntu-24.04
+                        make_target: build-linux
+                        archive_ext: tar.gz
+                    -   name: linux-arm64
+                        runs_on: ubuntu-24.04-arm
+                        make_target: build-linux-arm
+                        archive_ext: tar.gz
+
+                    # macOS
+                    -   name: macos-intel
+                        runs_on: macos-15-intel
+                        make_target: build-mac-intel
+                        archive_ext: tar.gz
+                    -   name: macos-arm64
+                        runs_on: macos-latest
+                        make_target: build-mac-arm
+                        archive_ext: tar.gz
+
+                    # Windows
+                    -   name: windows-amd64
+                        runs_on: windows-latest
+                        make_target: build-windows
+                        archive_ext: zip
+                    -   name: windows-arm64
+                        runs_on: windows-11-arm
+                        make_target: build-windows-arm
+                        archive_ext: zip
+
         steps:
             -   uses: actions/checkout@v4
 
@@ -19,16 +55,58 @@ jobs:
                     go-version-file: go.mod
                     cache: true
 
-            -   name: Build all binaries
-                run: make build
+            # Needed for golang.design/x/clipboard on Linux (X11 headers)
+            -   name: Install Linux deps (X11 headers)
+                if: runner.os == 'Linux'
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libx11-dev libxext-dev
+
+            -   name: Build (Makefile)
+                run: make ${{ matrix.make_target }}
+
+            -   name: Package (tar.gz)
+                if: runner.os != 'Windows'
+                shell: bash
+                run: |
+                    mkdir -p dist
+                    tar -C bin -czf "dist/pwm-${{ github.ref_name }}-${{ matrix.name }}.tar.gz" .
+
+            -   name: Package (zip)
+                if: runner.os == 'Windows'
+                shell: pwsh
+                run: |
+                    New-Item -ItemType Directory -Force -Path dist | Out-Null
+                    Compress-Archive -Path bin\* -DestinationPath "dist\pwm-${{ github.ref_name }}-${{ matrix.name }}.zip" -Force
+
+            -   name: Upload packaged artifact
+                uses: actions/upload-artifact@v4
+                with:
+                    name: dist-${{ matrix.name }}
+                    path: dist/*
+                    if-no-files-found: error
+
+    release:
+        name: Create GitHub Release
+        runs-on: ubuntu-24.04
+        needs: [ build ]
+
+        steps:
+            -   name: Download all build artifacts
+                uses: actions/download-artifact@v4
+                with:
+                    pattern: dist-*
+                    merge-multiple: true
+                    path: dist
 
             -   name: Generate checksums
                 run: |
-                    cd bin
+                    cd dist
                     sha256sum * > sha256sums.txt
 
-            -   name: Create GitHub Release + upload artifacts
+            -   name: Create release and upload assets
                 uses: softprops/action-gh-release@v2
                 with:
                     files: |
-                        bin/*
+                        dist/*
+                    fail_on_unmatched_files: true
