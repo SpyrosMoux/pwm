@@ -5,9 +5,42 @@ on:
     push:
         branches: [ main ]
 
+permissions:
+    contents: read
+
 jobs:
     build:
-        runs-on: ubuntu-latest
+        name: Build ${{ matrix.name }}
+        runs-on: ${{ matrix.runs_on }}
+
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    # Linux
+                    -   name: linux-amd64
+                        runs_on: ubuntu-24.04
+                        make_target: build-linux
+                    -   name: linux-arm64
+                        runs_on: ubuntu-24.04-arm
+                        make_target: build-linux-arm
+
+                    # macOS
+                    -   name: macos-intel
+                        runs_on: macos-15-intel
+                        make_target: build-mac-intel
+                    -   name: macos-arm64
+                        runs_on: macos-latest
+                        make_target: build-mac-arm
+
+                    # Windows
+                    -   name: windows-amd64
+                        runs_on: windows-latest
+                        make_target: build-windows
+                    -   name: windows-arm64
+                        runs_on: windows-11-arm
+                        make_target: build-windows-arm
+
         steps:
             -   uses: actions/checkout@v4
 
@@ -16,5 +49,19 @@ jobs:
                     go-version-file: go.mod
                     cache: true
 
+            # Required for golang.design/x/clipboard on Linux (X11 headers)
+            -   name: Install Linux deps (X11 headers)
+                if: runner.os == 'Linux'
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libx11-dev libxext-dev
+
             -   name: Build
-                run: make build
+                run: make ${{ matrix.make_target }}
+
+            -   name: Upload artifact
+                uses: actions/upload-artifact@v4
+                with:
+                    name: pwm-${{ matrix.name }}
+                    path: bin/*
+                    if-no-files-found: error
