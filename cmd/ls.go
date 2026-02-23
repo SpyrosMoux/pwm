@@ -4,9 +4,8 @@ Copyright © 2026 Spyros Mouchlianitis
 package cmd
 
 import (
-	"fmt"
+	"github.com/SpyrosMoux/pwm/internal/helpers"
 	"github.com/spf13/cobra"
-	"log"
 )
 
 // lsCmd represents the ls command
@@ -14,10 +13,10 @@ var lsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "Lists all secrets located in the default location.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(storageLocation)
+		helpers.PrintInfo(storageLocation)
 		err := ListSecrets(storageLocation, 0)
 		if err != nil {
-			log.Fatalf(err.Error())
+			helpers.PrintError(err.Error())
 		}
 	},
 }

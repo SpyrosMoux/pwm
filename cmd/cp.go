@@ -5,8 +5,8 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/SpyrosMoux/pwm/internal/helpers"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +21,7 @@ var cpCmd = &cobra.Command{
 		case 1:
 			err := CopySecret(args[0])
 			if err != nil {
-				log.Fatal(err)
+				helpers.PrintError(err.Error())
 			}
 		default:
 			fmt.Println(cmd.UsageString())

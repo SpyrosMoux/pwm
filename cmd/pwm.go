@@ -6,7 +6,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,11 +19,6 @@ type Secreter interface {
 	Encrypt([]byte) error
 	Decrypt([]byte) error
 }
-
-// TODO(spyrosmoux) make this secret
-// perhaps use an init command to set it, along with the storage location ?
-// could also be useful in case of master password!
-const cipherKey = "thisis32bitlongpassphraseimusing"
 
 func CreateSecret(secretName string) string {
 	url := helpers.StringInput("Enter a url for your secret: ")
@@ -42,17 +36,17 @@ func CreateSecret(secretName string) string {
 
 	err := Secreter.Encrypt(&secret, []byte(cipherKey))
 	if err != nil {
-		log.Fatal(err)
+		helpers.PrintError(err.Error())
 	}
 
 	jsonSecret, err := json.Marshal(secret)
 	if err != nil {
-		log.Fatal(err)
+		helpers.PrintError(err.Error())
 	}
 
 	dstPath, err := storeFile(secret.Name, jsonSecret)
 	if err != nil {
-		log.Fatal(err)
+		helpers.PrintError(err.Error())
 	}
 
 	return "Secret created at " + dstPath
@@ -151,7 +145,7 @@ func RemoveSecret(secret string) error {
 }
 
 func CopySecret(secretName string) error {
-	fmt.Println("Copying secret " + secretName)
+	helpers.PrintInfo("Copying secret " + secretName)
 
 	// Init returns an error if the package is not ready for use.
 	err := clipboard.Init()

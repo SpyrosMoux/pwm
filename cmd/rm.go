@@ -4,9 +4,10 @@ Copyright © 2026 Spyros Mouchlianitis
 package cmd
 
 import (
-	"fmt"
-	"github.com/spf13/cobra"
 	"log"
+
+	"github.com/SpyrosMoux/pwm/internal/helpers"
+	"github.com/spf13/cobra"
 )
 
 // rmCmd represents the rm command
@@ -20,7 +21,7 @@ var rmCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		fmt.Println("Removed secret:", args[0])
+		helpers.PrintInfo("Removed secret: " + args[0])
 	},
 }
 

@@ -22,14 +22,16 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
-	"log"
 	"os"
 
+	"github.com/SpyrosMoux/pwm/internal/helpers"
 	"github.com/spf13/cobra"
 )
 
-var storageLocation string
+var (
+	storageLocation string
+	cipherKey       string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -47,9 +49,9 @@ var rootCmd = &cobra.Command{
 		case 1:
 			secret, err := GetSecret(args[0])
 			if err != nil {
-				log.Fatal(err)
+				helpers.PrintError(err.Error())
 			}
-			fmt.Println(secret)
+			helpers.PrintInfo(secret)
 			os.Exit(0)
 		}
 	},
@@ -70,11 +72,36 @@ func init() {
 	// will be global for your application.
 	homeDir, _ := os.UserHomeDir()
 	storageLocation = homeDir + "/.pwm"
+	loadCipherKey()
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pwm.yaml)")
 	rootCmd.PersistentFlags().StringVar(&storageLocation, "location", storageLocation, "The directory to store the "+
 		"secrets.")
 
+	_, err := os.Stat(storageLocation)
+	if err != nil {
+		if os.IsNotExist(err) {
+			helpers.PrintWarn("Storage directory does not exist. Creating it at: " + storageLocation)
+			err := os.Mkdir(storageLocation, 0700)
+			if err != nil {
+				helpers.PrintError("Failed to create storage directory: " + err.Error())
+			}
+		} else {
+			helpers.PrintError("Failed to access storage directory: " + err.Error())
+		}
+	}
+
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
+}
+
+func loadCipherKey() {
+	cipherKey = os.Getenv("PWM_CIPHER_KEY")
+	if cipherKey == "" {
+		helpers.PrintError("PWM_CIPHER_KEY environment variable is not set")
+	}
+
+	if len(cipherKey) != 32 {
+		helpers.PrintError("PWM_CIPHER_KEY must be 32 characters long")
+	}
 }
