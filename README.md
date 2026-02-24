@@ -9,31 +9,24 @@ passwords safely with AES encryption.
 - [How It Works](#how-it-works)
 - [Installation](#installation)
     - [Prerequisites](#prerequisites)
-    - [From GitHub Releases](#from-github-releases)
     - [Building from Source](#building-from-source)
 - [Usage](#usage)
-    - [Setup](#setup)
     - [Basic Commands](#basic-commands)
     - [Command Reference](#command-reference)
 - [Configuration](#configuration)
 - [Security](#security)
 - [Project Structure](#project-structure)
-- [Development](#development)
 - [License](#license)
 
 ## Features
 
-- 🔐 **AES Encryption**: All sensitive fields (URL, username, password, description) are encrypted using AES with PKCS7
-  padding
-- 🔑 **User-Configurable Cipher Key**: Encryption key is set via the `PWM_CIPHER_KEY` environment variable
+- 🔐 **AES Encryption**: Passwords are encrypted using AES encryption with PKCS7 padding
 - 💾 **Local Storage**: All secrets are stored locally on your machine in `~/.pwm`
 - 🖥️ **Terminal-based**: Simple and intuitive command-line interface powered by Cobra
 - 📋 **Clipboard Integration**: Quickly copy passwords to your clipboard
-- 🔄 **Full CRUD Operations**: Create, read, and delete secrets
+- 🔄 **Full CRUD Operations**: Create, read, update, and delete secrets
 - ⚡ **Fast & Lightweight**: Written in Go with minimal dependencies
 - 🎯 **Rich Secret Information**: Store URLs, usernames, passwords, and descriptions
-- 🔧 **Password Auto-Generation**: Type `a` when prompted for a password to auto-generate a secure one
-- 🌐 **Cross-Platform**: Pre-built binaries for Linux, macOS, and Windows (amd64 and arm64)
 
 ## How It Works
 
@@ -43,45 +36,32 @@ Secrets are stored as JSON files in your local `~/.pwm` directory (or a custom l
 contains:
 
 - **Name**: The identifier for the secret
-- **URL**: The website or service URL (encrypted)
-- **Username**: Your username for the service (encrypted)
+- **URL**: The website or service URL
+- **Username**: Your username for the service
 - **Password**: Your password (encrypted)
-- **Description**: Additional notes or details (encrypted)
+- **Description**: Additional notes or details
 
 ### Encryption
 
 When you create a secret:
 
-1. The tool reads your 32-character cipher key from the `PWM_CIPHER_KEY` environment variable
-2. All sensitive fields (URL, username, password, description) are encrypted using AES encryption
+1. The tool prompts you to set a master password (used as the encryption key)
+2. Your password and other sensitive data are encrypted using AES encryption
 3. The encrypted data is stored as hex-encoded strings in JSON format
-4. Your cipher key is never stored on disk—it only exists in your environment
+4. Your master password is never stored—you must remember it
 
 When you retrieve a secret:
 
-1. The tool reads the cipher key from `PWM_CIPHER_KEY`
-2. The stored data is decrypted using your key
-3. The plaintext secret is displayed or the password is copied to your clipboard
+1. You provide your master password
+2. The tool decrypts the stored data using your password as the key
+3. The plaintext password is displayed or copied to your clipboard
 
 ## Installation
 
 ### Prerequisites
 
 - **Go 1.25.0 or later** (if building from source)
-- **macOS, Linux, or Windows**
-- The `PWM_CIPHER_KEY` environment variable must be set (see [Setup](#setup))
-
-### From GitHub Releases
-
-Pre-built binaries are available on the [Releases](https://github.com/SpyrosMoux/pwm/releases) page for:
-
-| Platform       | Architecture                         |
-|----------------|--------------------------------------|
-| Linux          | amd64, arm64                         |
-| macOS (Darwin) | Intel (amd64), Apple Silicon (arm64) |
-| Windows        | amd64, arm64                         |
-
-Download the appropriate archive for your platform, extract it, and place the binary in your `PATH`.
+- **macOS, Linux, or Windows** with a Unix-like shell
 
 ### Building from Source
 
@@ -92,64 +72,34 @@ git clone https://github.com/SpyrosMoux/pwm.git
 cd pwm
 ```
 
-2. Build for all platforms using the provided Makefile:
+2. Build and install using the provided Makefile:
+
+```bash
+make install
+```
+
+This will:
+
+- Run `go mod tidy` to download dependencies
+- Build the binary to `bin/pwm`
+- Copy the binary to `/usr/local/bin/pwm` (requires sudo)
+- Make it executable
+
+Alternatively, build without installing to `/usr/local/bin`:
 
 ```bash
 make build
-```
-
-This will produce cross-compiled binaries in the `bin/` directory:
-
-- `bin/pwm-linux-amd64`
-- `bin/pwm-linux-arm64`
-- `bin/pwm-darwin-amd64`
-- `bin/pwm-darwin-arm64`
-- `bin/pwm-windows-amd64.exe`
-- `bin/pwm-windows-arm64.exe`
-
-To build for a specific platform only:
-
-```bash
-make build-linux          # Linux amd64
-make build-linux-arm      # Linux arm64
-make build-mac-intel      # macOS Intel
-make build-mac-arm        # macOS Apple Silicon
-make build-windows        # Windows amd64
-make build-windows-arm    # Windows arm64
+# Binary will be at ./bin/pwm
 ```
 
 Or use Go directly:
 
 ```bash
 go mod tidy
-go build -o bin/pwm .
+go build -o bin/pwm main.go
 ```
 
 ## Usage
-
-### Setup
-
-Before using `pwm`, you must set the `PWM_CIPHER_KEY` environment variable to a **32-character** string. This key is
-used to encrypt and decrypt your secrets.
-
-**Linux / macOS:**
-
-```bash
-export PWM_CIPHER_KEY="your-32-character-secret-key!!!"
-```
-
-To persist across sessions, add it to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
-
-**Windows (PowerShell):**
-
-```powershell
-$env:PWM_CIPHER_KEY = "your-32-character-secret-key!!!"
-```
-
-To persist, set it as a system or user environment variable.
-
-> ⚠️ **Important**: The key must be exactly 32 characters long. Keep it secret and don't lose it—without it, you cannot
-> decrypt your secrets.
 
 ### Basic Commands
 
@@ -181,16 +131,16 @@ Creates a new secret. You'll be prompted to enter:
 
 - URL (optional)
 - Username
-- Password (enter `a` to auto-generate a secure password)
+- Password
 - Description (optional)
 
 ```bash
 pwm create github
 ```
 
-#### `pwm <secret_name>`
+#### `pwm <secret_name>` or `pwm get <secret_name>`
 
-Retrieves and displays a secret.
+Retrieves and displays a secret. Prompts you for your master password.
 
 ```bash
 pwm github
@@ -217,16 +167,16 @@ pwm cp github
 
 #### `pwm ls`
 
-Lists all secrets stored in your storage location as a tree structure.
+Lists all secrets stored in your default storage location.
 
 ```bash
 pwm ls
 
 # Output:
-# /home/username/.pwm
-# ├── github
-# ├── gmail
-# └── twitter
+# /Users/username/.pwm
+# github
+# gmail
+# twitter
 ```
 
 #### `pwm rm <secret_name>`
@@ -244,7 +194,7 @@ Shows help information and available commands.
 
 #### Custom Storage Location
 
-By default, secrets are stored in `~/.pwm`. You can specify a different location using the `--location` flag:
+By default, secrets are stored in `~/.pwm`. You can specify a different location:
 
 ```bash
 pwm --location /path/to/custom/location create my_secret
@@ -262,45 +212,44 @@ The default storage location is `~/.pwm`. This can be customized using the `--lo
 pwm --location ~/.my_passwords ls
 ```
 
-This applies to that specific command. To use a custom location permanently, you can create an alias:
+This will persist for that specific command. To use a custom location permanently, you can create an alias:
 
 ```bash
 alias pwm_custom='pwm --location ~/.my_passwords'
 pwm_custom ls
 ```
 
-### Cipher Key
+### Master Password
 
-Your cipher key is read from the `PWM_CIPHER_KEY` environment variable. It must be exactly **32 characters** long and
-is used as the AES encryption key for all encrypt/decrypt operations.
-
-The cipher key is **never stored** by `pwm`. If you lose your cipher key, you will not be able to decrypt your secrets.
+Your master password is used to encrypt and decrypt secrets. It is **never stored** anywhere. You must remember it or
+create a new master password for each use. If you forget your master password, you won't be able to decrypt your
+secrets.
 
 ## Security
 
 ### Important Security Notes
 
-- The `PWM_CIPHER_KEY` environment variable must be set and kept secure. Anyone with access to this key and your
-  `~/.pwm` directory can decrypt your secrets.
-- All sensitive fields (URL, username, password, and description) are encrypted—not just the password.
+⚠️ **Current Limitations**:
+
+1. **Hardcoded Cipher Key**: Currently uses a hardcoded cipher key for encryption, which is **not production-ready**.
+   All instances of pwm on a system share the same encryption key.
+2. **Future Enhancement**: A user-set master password feature is planned to improve security.
 
 ### Best Practices
 
-1. **Protect Your Cipher Key**: Store your `PWM_CIPHER_KEY` securely. Avoid committing it to version control or sharing
+1. **Protect Your Storage Directory**: The `~/.pwm` directory contains encrypted data. Keep it secure and don't share
    it.
-2. **Protect Your Storage Directory**: The `~/.pwm` directory contains encrypted data. Keep it secure and don't share
-   it.
-3. **Keep Go Updated**: Make sure you're using an up-to-date version of Go to benefit from the latest security patches.
-4. **System Security**: This tool is only as secure as your system. If your computer is compromised, your secrets may be
+2. **Keep Go Updated**: Make sure you're using an up-to-date version of Go to benefit from the latest security patches.
+3. **System Security**: This tool is only as secure as your system. If your computer is compromised, your secrets may be
    at risk.
 
 ### Encryption Details
 
 - **Algorithm**: AES (Advanced Encryption Standard)
 - **Padding**: PKCS7
-- **Key**: User-configurable via the `PWM_CIPHER_KEY` environment variable (32 characters / 256-bit)
-- **Encrypted Fields**: URL, Username, Password, Description
-- **Storage Format**: Hex-encoded ciphertext in JSON files
+- **Current Key**: Uses a hardcoded cipher key (not user-configurable)
+- **Future Improvements**: Planned features include user-set master passwords and key derivation functions (KDF) like
+  PBKDF2 or Argon2.
 
 ## Project Structure
 
@@ -309,38 +258,35 @@ pwm/
 ├── main.go                 # Entry point
 ├── go.mod                  # Go module definition
 ├── go.sum                  # Dependency checksums
-├── Makefile                # Cross-platform build scripts
-├── README.md               # This file
-├── LICENSE                 # GNU GPLv3 License
-├── .github/
-│   └── workflows/
-│       ├── ci.yml          # CI pipeline (build on push/PR)
-│       └── release.yml     # Release pipeline (build & publish on tag)
+├── Makefile               # Build and install scripts
+├── README.md              # This file
+├── LICENSE                # MIT License
+├── bin/
+│   └── pwm                # Compiled binary
 ├── cmd/
-│   ├── root.go             # Root command, flags, and cipher key loading
-│   ├── create.go           # Create command
-│   ├── ls.go               # List command
-│   ├── cp.go               # Copy command
-│   ├── rm.go               # Remove command
-│   └── pwm.go              # Core command implementations
+│   ├── root.go            # Root command and main logic
+│   ├── create.go          # Create command
+│   ├── ls.go              # List command
+│   ├── cp.go              # Copy command
+│   ├── rm.go              # Remove command
+│   └── pwm.go             # Core command implementations
 └── internal/
     ├── crypto/
-    │   └── crypto.go       # AES encryption/decryption and PKCS7 padding
+    │   └── crypto.go      # AES encryption/decryption logic
     ├── helpers/
-    │   ├── inputs.go       # User input handling (text & secret input)
-    │   └── outputs.go      # Output helpers (info, warn, error)
+    │   └── inputs.go      # User input handling
     └── models/
-        └── secret.go       # Secret data model, encrypt/decrypt methods
+        └── secret.go      # Secret data model and serialization
 ```
 
 ## Development
 
 ### Dependencies
 
-- **[github.com/spf13/cobra](https://github.com/spf13/cobra)**: CLI framework
-- **[github.com/SpyrosMoux/passwdgen](https://github.com/SpyrosMoux/passwdgen)**: Password auto-generation
-- **[golang.design/x/clipboard](https://pkg.go.dev/golang.design/x/clipboard)**: Clipboard integration
-- **[golang.org/x/term](https://pkg.go.dev/golang.org/x/term)**: Terminal handling for secret input
+- **github.com/spf13/cobra**: CLI framework
+- **github.com/SpyrosMoux/passwdgen**: Password generation
+- **golang.design/x/clipboard**: Clipboard integration
+- **golang.org/x/term**: Terminal handling
 
 Install dependencies:
 
@@ -351,11 +297,7 @@ go mod tidy
 ### Building
 
 ```bash
-# Build for all platforms
-make build
-
-# Or build with Go directly
-go build -o bin/pwm .
+go build -o bin/pwm main.go
 ```
 
 ### Running Tests
@@ -364,18 +306,9 @@ go build -o bin/pwm .
 go test ./...
 ```
 
-### CI/CD
-
-The project uses GitHub Actions for continuous integration and releases:
-
-- **CI** (`.github/workflows/ci.yml`): Builds on every push to `main` and on pull requests across all supported
-  platforms.
-- **Release** (`.github/workflows/release.yml`): On tagged pushes (`v*`), builds for all platforms, packages archives,
-  generates SHA-256 checksums, and creates a GitHub Release with all assets.
-
 ## License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU License - see the [LICENSE](LICENSE) file for details.
 
 ## Author
 
