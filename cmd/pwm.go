@@ -389,3 +389,83 @@ func readSecretIntoStruct(secret string) (models.Secret, error) {
 
 	return jsonSecret, nil
 }
+
+// UpdateSecret reads a secret, prompts for field updates, and rewrites it atomically.
+func UpdateSecret(secretName string) error {
+	// Read and decrypt the existing secret
+	secret, err := readSecretIntoStruct(secretName)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Updating secret: " + secretName)
+	fmt.Println("(Press Enter to skip a field)")
+	fmt.Println()
+
+	// Prompt for optional updates
+	fmt.Printf("URL [%s]: ", secret.Url)
+	newUrl := helpers.StringInput("")
+	if newUrl != "" {
+		secret.Url = newUrl
+	}
+
+	fmt.Printf("Username [%s]: ", secret.Username)
+	newUsername := helpers.StringInput("")
+	if newUsername != "" {
+		secret.Username = newUsername
+	}
+
+	fmt.Printf("Password [%s]: ", secret.Password)
+	newPassword := helpers.SecretInput("('a' to autogenerate, Enter to skip): ")
+	if newPassword == "a" {
+		// TODO: implement password generation if available
+		fmt.Println("Password auto-generation not yet implemented. Keeping current password.")
+	} else if newPassword != "" && newPassword != "keep" {
+		secret.Password = newPassword
+	}
+
+	fmt.Printf("Description [%s]: ", secret.Description)
+	newDescription := helpers.StringInput("")
+	if newDescription != "" {
+		secret.Description = newDescription
+	}
+
+	// Re-encrypt the updated secret
+	err = Secreter.Encrypt(&secret, []byte(cipherKey))
+	if err != nil {
+		return err
+	}
+
+	// Marshal to JSON
+	jsonSecret, err := json.Marshal(secret)
+	if err != nil {
+		return err
+	}
+
+	// Atomically write: write to temp file, then replace
+	dstPath := storageLocation + "/" + secretName
+	tempPath := dstPath + ".tmp"
+
+	tempFile, err := os.Create(tempPath)
+	if err != nil {
+		return err
+	}
+	defer tempFile.Close()
+
+	_, err = tempFile.Write(jsonSecret)
+	if err != nil {
+		os.Remove(tempPath)
+		return err
+	}
+
+	tempFile.Close()
+
+	// Atomic replace
+	err = os.Rename(tempPath, dstPath)
+	if err != nil {
+		os.Remove(tempPath)
+		return err
+	}
+
+	return nil
+}
