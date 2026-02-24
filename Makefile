@@ -2,7 +2,7 @@
 
 BIN := bin
 APP := pwm
-PKG := .          # or ./cmd/pwm if your main package lives there
+PKG := .
 
 .PHONY: bin
 bin:
