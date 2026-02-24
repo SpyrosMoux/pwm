@@ -37,7 +37,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:     "pwm",
 	Short:   "A simple password management tool",
-	Example: "pwm <my_secret>  Will print the decrypted secret",
+	Example: "pwm <my_secret|index>  Will print the decrypted secret (index from `pwm ls`)",
 	Args:    cobra.MinimumNArgs(0),
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
@@ -47,9 +47,16 @@ var rootCmd = &cobra.Command{
 			cmd.HelpFunc()(cmd, args)
 			os.Exit(0)
 		case 1:
-			secret, err := GetSecret(args[0])
+			name, err := resolveSecretArg(args[0])
 			if err != nil {
 				helpers.PrintError(err.Error())
+				os.Exit(1)
+			}
+
+			secret, err := GetSecret(name)
+			if err != nil {
+				helpers.PrintError(err.Error())
+				os.Exit(1)
 			}
 			helpers.PrintInfo(secret)
 			os.Exit(0)

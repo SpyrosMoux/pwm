@@ -11,10 +11,10 @@ import (
 // lsCmd represents the ls command
 var lsCmd = &cobra.Command{
 	Use:   "ls",
-	Short: "Lists all secrets located in the default location.",
+	Short: "Lists all secrets located in the default location (prints numeric indices).",
 	Run: func(cmd *cobra.Command, args []string) {
 		helpers.PrintInfo(storageLocation)
-		err := ListSecrets(storageLocation, 0)
+		err := ListSecretsNumbered(storageLocation, 0)
 		if err != nil {
 			helpers.PrintError(err.Error())
 		}

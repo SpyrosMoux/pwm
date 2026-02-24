@@ -173,6 +173,32 @@ pwm rm my_secret
 pwm --help
 ```
 
+### Index Selection
+
+You can also select secrets by numeric index instead of typing the full name. Run `pwm ls` to see a numbered tree (indices are 1-based and oldest secrets have lower numbers):
+
+```bash
+./pwm ls
+# /home/username/.pwm
+# ├── {1} old_secret
+# ├── {2} work/github
+# └── {3} personal/email
+```
+
+Use the index in any command that accepts a secret name. For example:
+
+```bash
+# Show secret with index 2 (same as `pwm "work/github"`)
+pwm 2
+
+# Copy password using index
+pwm cp 2
+
+# Remove using index
+pwm rm 2
+```
+
+
 ### Command Reference
 
 #### `pwm create <secret_name>`

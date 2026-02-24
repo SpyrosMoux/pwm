@@ -12,16 +12,22 @@ import (
 
 // rmCmd represents the rm command
 var rmCmd = &cobra.Command{
-	Use:   "rm <your_secret>",
-	Short: "Removes a secret",
+	Use:   "rm <name|index>",
+	Short: "Removes a secret by name or numeric index (from `pwm ls`)",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := RemoveSecret(args[0])
+		name, err := resolveSecretArg(args[0])
+		if err != nil {
+			helpers.PrintError(err.Error())
+			return
+		}
+
+		err = RemoveSecret(name)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		helpers.PrintInfo("Removed secret: " + args[0])
+		helpers.PrintInfo("Removed secret: " + name)
 	},
 }
 
