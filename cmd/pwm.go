@@ -391,7 +391,16 @@ func readSecretIntoStruct(secret string) (models.Secret, error) {
 }
 
 // UpdateSecret reads a secret, prompts for field updates, and rewrites it atomically.
+// Preserves the original modification time so the secret maintains its index position.
 func UpdateSecret(secretName string) error {
+	// Capture original mtime before any changes
+	dstPath := storageLocation + "/" + secretName
+	stat, err := os.Stat(dstPath)
+	if err != nil {
+		return err
+	}
+	originalModTime := stat.ModTime()
+
 	// Read and decrypt the existing secret
 	secret, err := readSecretIntoStruct(secretName)
 	if err != nil {
@@ -443,7 +452,6 @@ func UpdateSecret(secretName string) error {
 	}
 
 	// Atomically write: write to temp file, then replace
-	dstPath := storageLocation + "/" + secretName
 	tempPath := dstPath + ".tmp"
 
 	tempFile, err := os.Create(tempPath)
@@ -465,6 +473,13 @@ func UpdateSecret(secretName string) error {
 	if err != nil {
 		os.Remove(tempPath)
 		return err
+	}
+
+	// Restore original modification time to preserve index position
+	err = os.Chtimes(dstPath, originalModTime, originalModTime)
+	if err != nil {
+		// Log but don't fail: mtime restoration is non-critical
+		fmt.Fprintf(os.Stderr, "Warning: could not restore modification time: %v\n", err)
 	}
 
 	return nil

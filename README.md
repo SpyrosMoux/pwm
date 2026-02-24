@@ -286,6 +286,8 @@ pwm update 2
 # Secret updated successfully: github
 ```
 
+**Index Preservation**: The secret maintains its original index position (from `pwm ls`) after an update. Modification times are preserved so updated secrets don't move in the list.
+
 **Atomic Updates**: The update operation writes to a temporary file and atomically replaces the original file to prevent corruption if the process is interrupted.
 
 #### `pwm --help`
