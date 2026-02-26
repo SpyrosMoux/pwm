@@ -25,6 +25,12 @@ type Secreter interface {
 }
 
 func CreateSecret(secretName string) string {
+	// name must not be purely numeric, otherwise later commands that accept
+	// either a name or numeric index would misinterpret the argument.
+	if _, err := strconv.Atoi(secretName); err == nil {
+		helpers.PrintError("secret name cannot be a number")
+	}
+
 	url := helpers.StringInput("Enter a url for your secret: ")
 	username := helpers.StringInput("Enter username: ")
 	password := helpers.SecretInput("Enter password ('a' to autogenerate): ")
@@ -134,34 +140,46 @@ func GetSecret(secret string) (decryptedSecret string, err error) {
 	return jsonSecret.String(), nil
 }
 
-// resolveSecretArg accepts either a secret name or a 1-based index string
-// and returns the resolved secret filename.
+// resolveSecretArg turns an argument into a secret filename. Numeric
+// strings are always treated as indices; everything else is returned
+// as user typed it.
 func resolveSecretArg(arg string) (string, error) {
-	// try parse as integer index
-	idx, err := strconv.Atoi(arg)
-	if err != nil {
-		// not an integer, assume it's a name (possibly with subdir)
-		return arg, nil
+	idx, err := strconv.ParseInt(arg, 10, 64)
+	if err == nil {
+		// parsed as integer, treat strictly as index
+		if idx < 1 {
+			return "", errors.New("index must be >= 1")
+		}
+
+		files, err := getFilesSortedByModTime(storageLocation)
+		if err != nil {
+			return "", err
+		}
+
+		if len(files) == 0 {
+			return "", errors.New("no secrets available")
+		}
+
+		if int(idx) > len(files) {
+			return "", fmt.Errorf("index out of range (1..%d)", len(files))
+		}
+
+		return files[idx-1], nil
 	}
 
-	if idx <= 0 {
-		return "", errors.New("index must be >= 1")
+	// parsing failed; inspect error
+	if numErr, ok := err.(*strconv.NumError); ok {
+		switch numErr.Err {
+		case strconv.ErrRange:
+			return "", errors.New("invalid index: number too large")
+		case strconv.ErrSyntax:
+			// not an integer at all, treat as a name
+			return arg, nil
+		}
 	}
 
-	files, err := getFilesSortedByModTime(storageLocation)
-	if err != nil {
-		return "", err
-	}
-
-	if len(files) == 0 {
-		return "", errors.New("no secrets available")
-	}
-
-	if idx > len(files) {
-		return "", errors.New("index out of range")
-	}
-
-	return files[idx-1], nil
+	// fallback to name (covers any other unexpected error)
+	return arg, nil
 }
 
 // collectFiles walks the storage directory and returns a slice of file paths

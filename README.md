@@ -201,9 +201,41 @@ pwm rm 2
 
 ### Command Reference
 
+#### Argument resolution
+
+Whenever the CLI accepts a secret identifier it supports two modes:
+
+1. **Name** – any string that is not composed solely of digits. Names may
+   include subdirectory paths (e.g. `work/github`).
+2. **Index** – a 1-based numeric position in the list produced by `pwm ls`.
+
+The following rules are applied internally:
+
+- Input consisting only of digits is always treated as an index.
+- Index parsing uses `strconv.ParseInt` (base 10, 64-bit).
+  - Parsed index must be **>= 1** and **≤ number of secrets**; otherwise an
+    error is reported (e.g. `index out of range (1..N)`).
+  - If parsing fails with `ErrRange` the number is too large; the CLI reports
+    `invalid index: number too large`.
+  - If parsing fails with `ErrSyntax` the argument is not a number and is
+    handled as a name.
+  - Numeric overflow is **never** treated as a name – it always indicates an
+    index attempt.
+- Secret names are validated during creation to ensure they are not digits‑only.
+
+These semantics are implemented by the `resolveSecretArg` helper used by the
+root command and subcommands such as `cp` and `rm`.
+
+
+### Command Reference
+
 #### `pwm create <secret_name>`
 
-Creates a new secret. You'll be prompted to enter:
+Creates a new secret. The name may include letters, numbers and `/` for
+subdirectories, but it **cannot be entirely numeric**. Numeric names would be
+interpreted as an index by other commands and are therefore disallowed.
+
+You'll be prompted to enter:
 
 - URL (optional)
 - Username
