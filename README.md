@@ -173,11 +173,69 @@ pwm rm my_secret
 pwm --help
 ```
 
+### Index Selection
+
+You can also select secrets by numeric index instead of typing the full name. Run `pwm ls` to see a numbered tree (indices are 1-based and oldest secrets have lower numbers):
+
+```bash
+./pwm ls
+# /home/username/.pwm
+# ├── {1} old_secret
+# ├── {2} work/github
+# └── {3} personal/email
+```
+
+Use the index in any command that accepts a secret name. For example:
+
+```bash
+# Show secret with index 2 (same as `pwm "work/github"`)
+pwm 2
+
+# Copy password using index
+pwm cp 2
+
+# Remove using index
+pwm rm 2
+```
+
+
+### Command Reference
+
+#### Argument resolution
+
+Whenever the CLI accepts a secret identifier it supports two modes:
+
+1. **Name** – any string that is not composed solely of digits. Names may
+   include subdirectory paths (e.g. `work/github`).
+2. **Index** – a 1-based numeric position in the list produced by `pwm ls`.
+
+The following rules are applied internally:
+
+- Input consisting only of digits is always treated as an index.
+- Index parsing uses `strconv.ParseInt` (base 10, 64-bit).
+  - Parsed index must be **>= 1** and **≤ number of secrets**; otherwise an
+    error is reported (e.g. `index out of range (1..N)`).
+  - If parsing fails with `ErrRange` the number is too large; the CLI reports
+    `invalid index: number too large`.
+  - If parsing fails with `ErrSyntax` the argument is not a number and is
+    handled as a name.
+  - Numeric overflow is **never** treated as a name – it always indicates an
+    index attempt.
+- Secret names are validated during creation to ensure they are not digits‑only.
+
+These semantics are implemented by the `resolveSecretArg` helper used by the
+root command and subcommands such as `cp` and `rm`.
+
+
 ### Command Reference
 
 #### `pwm create <secret_name>`
 
-Creates a new secret. You'll be prompted to enter:
+Creates a new secret. The name may include letters, numbers and `/` for
+subdirectories, but it **cannot be entirely numeric**. Numeric names would be
+interpreted as an index by other commands and are therefore disallowed.
+
+You'll be prompted to enter:
 
 - URL (optional)
 - Username

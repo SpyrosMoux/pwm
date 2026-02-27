@@ -12,14 +12,20 @@ import (
 
 // cpCmd represents the cp command
 var cpCmd = &cobra.Command{
-	Use:   "cp",
-	Short: "Copies the password of the specified secret to the clipboard.",
+	Use:   "cp <name|index>",
+	Short: "Copies the password of the specified secret (name or index) to the clipboard.",
 	Run: func(cmd *cobra.Command, args []string) {
 		switch len(args) {
 		case 0:
 			fmt.Println(cmd.UsageString())
 		case 1:
-			err := CopySecret(args[0])
+			name, err := resolveSecretArg(args[0])
+			if err != nil {
+				helpers.PrintError(err.Error())
+				return
+			}
+
+			err = CopySecret(name)
 			if err != nil {
 				helpers.PrintError(err.Error())
 			}

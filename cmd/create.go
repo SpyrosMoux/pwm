@@ -12,7 +12,10 @@ var createCmd = &cobra.Command{
 	Short: "Create a new secret",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		CreateSecret(args[0])
+		msg := CreateSecret(args[0])
+		if msg != "" {
+			println(msg)
+		}
 	},
 }
 
