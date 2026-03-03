@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SpyrosMoux/passwdgen"
 	"github.com/SpyrosMoux/pwm/internal/helpers"
 	"github.com/SpyrosMoux/pwm/internal/models"
 	"golang.design/x/clipboard"
@@ -34,6 +35,11 @@ func CreateSecret(secretName string) string {
 	url := helpers.StringInput("Enter a url for your secret: ")
 	username := helpers.StringInput("Enter username: ")
 	password := helpers.SecretInput("Enter password ('a' to autogenerate): ")
+	if password == "a" {
+		options := passwdgen.NewRandomStringOptions()
+		password = passwdgen.RandomStringNumbersSymbols(&options)
+		fmt.Printf("Generated password: %s\n", password)
+	}
 	description := helpers.StringInput("Enter a description: ")
 
 	secret := models.Secret{
@@ -443,11 +449,13 @@ func UpdateSecret(secretName string) error {
 	}
 
 	fmt.Printf("Password [%s]: ", secret.Password)
-	newPassword := helpers.SecretInput("('a' to autogenerate, Enter to skip): ")
+	newPassword := helpers.OptionalSecretInput("('a' to autogenerate, Enter to skip): ")
 	if newPassword == "a" {
-		// TODO: implement password generation if available
-		fmt.Println("Password auto-generation not yet implemented. Keeping current password.")
-	} else if newPassword != "" && newPassword != "keep" {
+		options := passwdgen.NewRandomStringOptions()
+		generatedPassword := passwdgen.RandomStringNumbersSymbols(&options)
+		fmt.Printf("Generated password: %s\n", generatedPassword)
+		secret.Password = generatedPassword
+	} else if newPassword != "" {
 		secret.Password = newPassword
 	}
 

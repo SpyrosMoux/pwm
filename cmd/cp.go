@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/SpyrosMoux/pwm/internal/helpers"
 	"github.com/spf13/cobra"
@@ -17,7 +18,8 @@ var cpCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		switch len(args) {
 		case 0:
-			fmt.Println(cmd.UsageString())
+			cmd.UsageString()
+			os.Exit(1)
 		case 1:
 			name, err := resolveSecretArg(args[0])
 			if err != nil {

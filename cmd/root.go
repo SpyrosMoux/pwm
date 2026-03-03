@@ -60,6 +60,9 @@ var rootCmd = &cobra.Command{
 			}
 			helpers.PrintInfo(secret)
 			os.Exit(0)
+		default:
+			cmd.HelpFunc()(cmd, args)
+			os.Exit(1)
 		}
 	},
 }
