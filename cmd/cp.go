@@ -27,7 +27,7 @@ var cpCmd = &cobra.Command{
 				return
 			}
 
-			err = CopySecret(name)
+			err = secretsService.CopySecret(name)
 			if err != nil {
 				helpers.PrintError(err.Error())
 			}

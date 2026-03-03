@@ -25,7 +25,7 @@ var updateCmd = &cobra.Command{
 			return
 		}
 
-		err = UpdateSecret(name)
+		err = secretsService.UpdateSecret(name)
 		if err != nil {
 			helpers.PrintError(err.Error())
 			return

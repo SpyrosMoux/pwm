@@ -17,7 +17,7 @@ var rmCmd = &cobra.Command{
 	Short: "Removes a secret by name or numeric index (from `pwm ls`)",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 {
+		if len(args) != 1 {
 			cmd.UsageString()
 			os.Exit(1)
 		}
@@ -27,7 +27,7 @@ var rmCmd = &cobra.Command{
 			return
 		}
 
-		err = RemoveSecret(name)
+		err = secretsService.RemoveSecret(name)
 		if err != nil {
 			log.Fatal(err)
 		}

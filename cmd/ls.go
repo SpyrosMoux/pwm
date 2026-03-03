@@ -21,7 +21,7 @@ var lsCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		helpers.PrintInfo(storageLocation)
-		err := ListSecretsNumbered(storageLocation, 0)
+		err := secretsService.ListSecretsNumbered(storageLocation, 0)
 		if err != nil {
 			helpers.PrintError(err.Error())
 		}

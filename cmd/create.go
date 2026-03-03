@@ -18,7 +18,7 @@ var createCmd = &cobra.Command{
 			cmd.UsageString()
 			os.Exit(1)
 		}
-		msg := CreateSecret(args[0])
+		msg := secretsService.CreateSecret(args[0])
 		if msg != "" {
 			println(msg)
 		}
