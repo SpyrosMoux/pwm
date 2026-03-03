@@ -24,13 +24,17 @@ package cmd
 import (
 	"os"
 
+	"github.com/SpyrosMoux/pwm/internal/crypto"
 	"github.com/SpyrosMoux/pwm/internal/helpers"
+	"github.com/SpyrosMoux/pwm/internal/secrets"
+	"github.com/SpyrosMoux/pwm/internal/store"
 	"github.com/spf13/cobra"
 )
 
 var (
 	storageLocation string
 	cipherKey       string
+	secretsService  *secrets.Service
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -53,13 +57,16 @@ var rootCmd = &cobra.Command{
 				os.Exit(1)
 			}
 
-			secret, err := GetSecret(name)
+			secret, err := secretsService.GetSecret(name)
 			if err != nil {
 				helpers.PrintError(err.Error())
 				os.Exit(1)
 			}
 			helpers.PrintInfo(secret)
 			os.Exit(0)
+		default:
+			cmd.HelpFunc()(cmd, args)
+			os.Exit(1)
 		}
 	},
 }
@@ -80,6 +87,19 @@ func init() {
 	homeDir, _ := os.UserHomeDir()
 	storageLocation = homeDir + "/.pwm"
 	loadCipherKey()
+
+	storer := &store.FileStore{
+		storageLocation,
+	}
+
+	crypter := &crypto.AESGCM{
+		[]byte(cipherKey),
+	}
+
+	secretsService = &secrets.Service{
+		Store:  storer,
+		Crypto: crypter,
+	}
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pwm.yaml)")
 	rootCmd.PersistentFlags().StringVar(&storageLocation, "location", storageLocation, "The directory to store the "+

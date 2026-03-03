@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"log"
+	"os"
 
 	"github.com/SpyrosMoux/pwm/internal/helpers"
 	"github.com/spf13/cobra"
@@ -16,13 +17,17 @@ var rmCmd = &cobra.Command{
 	Short: "Removes a secret by name or numeric index (from `pwm ls`)",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			cmd.UsageString()
+			os.Exit(1)
+		}
 		name, err := resolveSecretArg(args[0])
 		if err != nil {
 			helpers.PrintError(err.Error())
 			return
 		}
 
-		err = RemoveSecret(name)
+		err = secretsService.RemoveSecret(name)
 		if err != nil {
 			log.Fatal(err)
 		}

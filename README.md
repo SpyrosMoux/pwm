@@ -296,6 +296,32 @@ pwm rm old_service
 # Removed secret: old_service
 ```
 
+#### `pwm update <secret_name|index>`
+
+Updates an existing secret's fields (URL, username, password, description). You'll be prompted to enter new values for each field. Press Enter to skip a field and keep its current value.
+
+```bash
+# Update by name
+pwm update github
+
+# Update by numeric index
+pwm update 2
+
+# Example session:
+# Updating secret: github
+# (Press Enter to skip a field)
+#
+# URL [https://github.com]: https://new-github-url.com
+# Username [old_user]: 
+# Password [***]: new_secure_password
+# Description [My GitHub account]: Updated GitHub account
+# Secret updated successfully: github
+```
+
+**Index Preservation**: The secret maintains its original index position (from `pwm ls`) after an update. Modification times are preserved so updated secrets don't move in the list.
+
+**Atomic Updates**: The update operation writes to a temporary file and atomically replaces the original file to prevent corruption if the process is interrupted.
+
 #### `pwm --help`
 
 Shows help information and available commands.

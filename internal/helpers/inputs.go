@@ -10,7 +10,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/SpyrosMoux/passwdgen"
 	"golang.org/x/term"
 )
 
@@ -45,18 +44,25 @@ func SecretInput(inputLabel string) string {
 		i, _ := term.ReadPassword(int(syscall.Stdin))
 		input = string(i)
 
-		options := passwdgen.NewRandomStringOptions()
-
-		if input == "a" {
-			input = passwdgen.RandomStringNumbersSymbols(&options)
-			fmt.Printf("\nGenerated password: %s", input)
-			break
-		}
-
 		if input != "" {
 			break
 		}
 	}
+
+	fmt.Println()
+	return strings.TrimSpace(input)
+}
+
+func OptionalSecretInput(inputLabel string) string {
+	var input string
+
+	_, err := fmt.Fprint(os.Stderr, inputLabel+" ")
+	if err != nil {
+		panic(err)
+	}
+
+	i, _ := term.ReadPassword(int(syscall.Stdin))
+	input = string(i)
 
 	fmt.Println()
 	return strings.TrimSpace(input)

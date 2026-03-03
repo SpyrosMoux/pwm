@@ -4,6 +4,8 @@ Copyright © 2026 Spyros Mouchlianitis
 package cmd
 
 import (
+	"os"
+
 	"github.com/SpyrosMoux/pwm/internal/helpers"
 	"github.com/spf13/cobra"
 )
@@ -12,9 +14,14 @@ import (
 var lsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "Lists all secrets located in the default location (prints numeric indices).",
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 0 {
+			cmd.UsageString()
+			os.Exit(1)
+		}
 		helpers.PrintInfo(storageLocation)
-		err := ListSecretsNumbered(storageLocation, 0)
+		err := secretsService.ListSecretsNumbered(storageLocation, 0)
 		if err != nil {
 			helpers.PrintError(err.Error())
 		}

@@ -8,11 +8,79 @@ import (
 	"crypto/aes"
 	"encoding/hex"
 	"errors"
+
+	"github.com/SpyrosMoux/pwm/internal/models"
 )
 
-func EncryptAES(key []byte, plaintext string) (string, error) {
+type Crypter interface {
+	Encrypt(secret *models.Secret) error
+	Decrypt(secret *models.Secret) error
+}
+
+type AESGCM struct {
+	CipherKey []byte
+}
+
+func (aesgcm *AESGCM) Encrypt(secret *models.Secret) error {
+	urlHex, err := EncryptAES(aesgcm.CipherKey, secret.Url)
+	if err != nil {
+		return err
+	}
+
+	usernameHex, err := EncryptAES(aesgcm.CipherKey, secret.Username)
+	if err != nil {
+		return err
+	}
+
+	passwordHex, err := EncryptAES(aesgcm.CipherKey, secret.Password)
+	if err != nil {
+		return err
+	}
+
+	descriptionHex, err := EncryptAES(aesgcm.CipherKey, secret.Description)
+	if err != nil {
+		return err
+	}
+
+	secret.Url = urlHex
+	secret.Username = usernameHex
+	secret.Password = passwordHex
+	secret.Description = descriptionHex
+
+	return nil
+}
+
+func (aesgcm *AESGCM) Decrypt(secret *models.Secret) error {
+	urlString, err := DecryptAES(aesgcm.CipherKey, secret.Url)
+	if err != nil {
+		return err
+	}
+
+	usernameString, err := DecryptAES(aesgcm.CipherKey, secret.Username)
+	if err != nil {
+		return err
+	}
+
+	passwordString, err := DecryptAES(aesgcm.CipherKey, secret.Password)
+	if err != nil {
+		return err
+	}
+
+	descriptionString, err := DecryptAES(aesgcm.CipherKey, secret.Description)
+	if err != nil {
+		return err
+	}
+
+	secret.Url = urlString
+	secret.Username = usernameString
+	secret.Password = passwordString
+	secret.Description = descriptionString
+
+	return nil
+}
+func EncryptAES(cipherKey []byte, plaintext string) (string, error) {
 	// create cipher
-	c, err := aes.NewCipher(key)
+	c, err := aes.NewCipher(cipherKey)
 	if err != nil {
 		return "", err
 	}
