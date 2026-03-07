@@ -11,7 +11,7 @@ type Storer interface {
 	StoreFile(fileName string, hex []byte) (string, error)
 	GetFilesSortedByModTime(root string) ([]string, error)
 	ReadFile(fileName string) ([]byte, error)
-	CheckFiletExists(fileName string) (bool, error)
+	CheckFileExists(fileName string) (bool, error)
 	RemoveFile(fileName string) error
 	GetFilePath(fileName string) (string, error)
 }
@@ -103,7 +103,7 @@ func (fStore *FileStore) ReadFile(fileName string) ([]byte, error) {
 	return hex, nil
 }
 
-func (fStore *FileStore) CheckFiletExists(fileName string) (bool, error) {
+func (fStore *FileStore) CheckFileExists(fileName string) (bool, error) {
 	_, err := os.Stat(fStore.StorageLocation + "/" + fileName)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -124,7 +124,7 @@ func (fStore *FileStore) RemoveFile(fileName string) error {
 }
 
 func (fStore *FileStore) GetFilePath(fileName string) (string, error) {
-	exists, err := fStore.CheckFiletExists(fileName)
+	exists, err := fStore.CheckFileExists(fileName)
 	if err != nil {
 		return "", err
 	}

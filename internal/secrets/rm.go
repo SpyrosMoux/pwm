@@ -1,7 +1,7 @@
 package secrets
 
 func (svc *Service) RemoveSecret(secret string) error {
-	exists, err := svc.Store.CheckFiletExists(secret)
+	exists, err := svc.Store.CheckFileExists(secret)
 	if err != nil {
 		return err
 	}
