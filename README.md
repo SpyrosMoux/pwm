@@ -1,20 +1,22 @@
 # pwm - Password Manager
 
-A simple, secure, and lightweight command-line password manager written in Go. Store, retrieve, and manage your
-passwords safely with AES encryption.
+`pwm` is a simple command-line password manager written in Go.
+
+It stores secrets as local files and encrypts secret fields using AES with PKCS7 padding.
 
 ## Table of Contents
 
 - [Features](#features)
 - [How It Works](#how-it-works)
 - [Installation](#installation)
-    - [Prerequisites](#prerequisites)
-    - [From GitHub Releases](#from-github-releases)
-    - [Building from Source](#building-from-source)
+  - [Prerequisites](#prerequisites)
+  - [From GitHub Releases](#from-github-releases)
+  - [Building from Source](#building-from-source)
 - [Usage](#usage)
-    - [Setup](#setup)
-    - [Basic Commands](#basic-commands)
-    - [Command Reference](#command-reference)
+  - [Setup](#setup)
+  - [Basic Commands](#basic-commands)
+  - [Index Selection](#index-selection)
+  - [Command Reference](#command-reference)
 - [Configuration](#configuration)
 - [Security](#security)
 - [Project Structure](#project-structure)
@@ -23,82 +25,74 @@ passwords safely with AES encryption.
 
 ## Features
 
-- 🔐 **AES Encryption**: All sensitive fields (URL, username, password, description) are encrypted using AES with PKCS7
-  padding
-- 🔑 **User-Configurable Cipher Key**: Encryption key is set via the `PWM_CIPHER_KEY` environment variable
-- 💾 **Local Storage**: All secrets are stored locally on your machine in `~/.pwm`
-- 🖥️ **Terminal-based**: Simple and intuitive command-line interface powered by Cobra
-- 📋 **Clipboard Integration**: Quickly copy passwords to your clipboard
-- 🔄 **Full CRUD Operations**: Create, read, and delete secrets
-- ⚡ **Fast & Lightweight**: Written in Go with minimal dependencies
-- 🎯 **Rich Secret Information**: Store URLs, usernames, passwords, and descriptions
-- 🔧 **Password Auto-Generation**: Type `a` when prompted for a password to auto-generate a secure one
-- 🌐 **Cross-Platform**: Pre-built binaries for Linux, macOS, and Windows (amd64 and arm64)
+- AES encryption for secret fields (`url`, `username`, `password`, `description`)
+- Cipher key loaded from `PWM_CIPHER_KEY` (must be 32 characters)
+- Local file storage in `~/.pwm` by default
+- Numbered secret listing via `pwm ls`
+- Name-or-index targeting for read/copy/remove/update commands
+- Create, read, copy, update, and delete workflows
+- Password auto-generation during create and update
+- Atomic secret updates with original modification time preserved
+- Custom storage location via `--location`
+- Cross-platform builds for Linux, macOS, and Windows (amd64 + arm64)
 
 ## How It Works
 
 ### Secret Storage
 
-Secrets are stored as JSON files in your local `~/.pwm` directory (or a custom location of your choice). Each secret
-contains:
+Each secret is stored as a JSON file in `~/.pwm` (or a custom `--location` directory).
 
-- **Name**: The identifier for the secret
-- **URL**: The website or service URL (encrypted)
-- **Username**: Your username for the service (encrypted)
-- **Password**: Your password (encrypted)
-- **Description**: Additional notes or details (encrypted)
+A secret contains:
 
-### Encryption
+- `Name`
+- `Url` (encrypted)
+- `Username` (encrypted)
+- `Password` (encrypted)
+- `Description` (encrypted)
 
-When you create a secret:
+### Encryption Flow
 
-1. The tool reads your 32-character cipher key from the `PWM_CIPHER_KEY` environment variable
-2. All sensitive fields (URL, username, password, description) are encrypted using AES encryption
-3. The encrypted data is stored as hex-encoded strings in JSON format
-4. Your cipher key is never stored on disk—it only exists in your environment
+When creating or updating a secret:
 
-When you retrieve a secret:
+1. `pwm` reads `PWM_CIPHER_KEY` from the environment.
+2. Sensitive fields are encrypted.
+3. Encrypted values are stored as hex strings in JSON.
 
-1. The tool reads the cipher key from `PWM_CIPHER_KEY`
-2. The stored data is decrypted using your key
-3. The plaintext secret is displayed or the password is copied to your clipboard
+When reading/copying a secret:
+
+1. `pwm` reads `PWM_CIPHER_KEY`.
+2. Stored values are decrypted.
+3. The secret is printed or copied to the clipboard.
 
 ## Installation
 
 ### Prerequisites
 
-- **Go 1.25.0 or later** (if building from source)
-- **macOS, Linux, or Windows**
-- The `PWM_CIPHER_KEY` environment variable must be set (see [Setup](#setup))
+- Go `1.25.0` or later (for source builds)
+- macOS, Linux, or Windows
+- `PWM_CIPHER_KEY` configured before usage
 
 ### From GitHub Releases
 
-Pre-built binaries are available on the [Releases](https://github.com/SpyrosMoux/pwm/releases) page for:
+Prebuilt binaries are available at:
 
-| Platform       | Architecture                         |
-|----------------|--------------------------------------|
-| Linux          | amd64, arm64                         |
-| macOS (Darwin) | Intel (amd64), Apple Silicon (arm64) |
-| Windows        | amd64, arm64                         |
+- <https://github.com/SpyrosMoux/pwm/releases>
 
-Download the appropriate archive for your platform, extract it, and place the binary in your `PATH`.
+Supported release targets:
+
+- Linux: `amd64`, `arm64`
+- macOS: `amd64`, `arm64`
+- Windows: `amd64`, `arm64`
 
 ### Building from Source
-
-1. Clone the repository:
 
 ```bash
 git clone https://github.com/SpyrosMoux/pwm.git
 cd pwm
-```
-
-2. Build for all platforms using the provided Makefile:
-
-```bash
 make build
 ```
 
-This will produce cross-compiled binaries in the `bin/` directory:
+This creates binaries under `bin/`:
 
 - `bin/pwm-linux-amd64`
 - `bin/pwm-linux-arm64`
@@ -107,18 +101,18 @@ This will produce cross-compiled binaries in the `bin/` directory:
 - `bin/pwm-windows-amd64.exe`
 - `bin/pwm-windows-arm64.exe`
 
-To build for a specific platform only:
+Build a single target:
 
 ```bash
-make build-linux          # Linux amd64
-make build-linux-arm      # Linux arm64
-make build-mac-intel      # macOS Intel
-make build-mac-arm        # macOS Apple Silicon
-make build-windows        # Windows amd64
-make build-windows-arm    # Windows arm64
+make build-linux
+make build-linux-arm
+make build-mac-intel
+make build-mac-arm
+make build-windows
+make build-windows-arm
 ```
 
-Or use Go directly:
+Or build directly with Go:
 
 ```bash
 go mod tidy
@@ -129,342 +123,229 @@ go build -o bin/pwm .
 
 ### Setup
 
-Before using `pwm`, you must set the `PWM_CIPHER_KEY` environment variable to a **32-character** string. This key is
-used to encrypt and decrypt your secrets.
+Set `PWM_CIPHER_KEY` to an exact 32-character value.
 
-**Linux / macOS:**
+Linux/macOS:
 
 ```bash
 export PWM_CIPHER_KEY="your-32-character-secret-key!!!"
 ```
 
-To persist across sessions, add it to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
-
-**Windows (PowerShell):**
+Windows (PowerShell):
 
 ```powershell
 $env:PWM_CIPHER_KEY = "your-32-character-secret-key!!!"
 ```
 
-To persist, set it as a system or user environment variable.
-
-> ⚠️ **Important**: The key must be exactly 32 characters long. Keep it secret and don't lose it—without it, you cannot
-> decrypt your secrets.
+If the key is missing or not 32 characters long, `pwm` exits with an error.
 
 ### Basic Commands
 
 ```bash
-# Create a new secret
-pwm create my_secret
+# Create a secret (name cannot be numeric-only)
+pwm create github
 
-# List all stored secrets
+# List secrets with numbered indices
 pwm ls
 
-# Retrieve and display a secret
-pwm my_secret
+# Show secret by name
+pwm github
 
-# Copy a secret's password to clipboard
-pwm cp my_secret
+# Show secret by index
+pwm 2
 
-# Delete a secret
-pwm rm my_secret
+# Copy password by name or index
+pwm cp github
+pwm cp 2
 
-# Show help
-pwm --help
+# Update by name or index
+pwm update github
+pwm update 2
+
+# Remove by name or index
+pwm rm github
+pwm rm 2
 ```
 
 ### Index Selection
 
-You can also select secrets by numeric index instead of typing the full name. Run `pwm ls` to see a numbered tree (indices are 1-based and oldest secrets have lower numbers):
-
-```bash
-./pwm ls
-# /home/username/.pwm
-# ├── {1} old_secret
-# ├── {2} work/github
-# └── {3} personal/email
-```
-
-Use the index in any command that accepts a secret name. For example:
-
-```bash
-# Show secret with index 2 (same as `pwm "work/github"`)
-pwm 2
-
-# Copy password using index
-pwm cp 2
-
-# Remove using index
-pwm rm 2
-```
-
-
-### Command Reference
-
-#### Argument resolution
-
-Whenever the CLI accepts a secret identifier it supports two modes:
-
-1. **Name** – any string that is not composed solely of digits. Names may
-   include subdirectory paths (e.g. `work/github`).
-2. **Index** – a 1-based numeric position in the list produced by `pwm ls`.
-
-The following rules are applied internally:
-
-- Input consisting only of digits is always treated as an index.
-- Index parsing uses `strconv.ParseInt` (base 10, 64-bit).
-  - Parsed index must be **>= 1** and **≤ number of secrets**; otherwise an
-    error is reported (e.g. `index out of range (1..N)`).
-  - If parsing fails with `ErrRange` the number is too large; the CLI reports
-    `invalid index: number too large`.
-  - If parsing fails with `ErrSyntax` the argument is not a number and is
-    handled as a name.
-  - Numeric overflow is **never** treated as a name – it always indicates an
-    index attempt.
-- Secret names are validated during creation to ensure they are not digits‑only.
-
-These semantics are implemented by the `resolveSecretArg` helper used by the
-root command and subcommands such as `cp` and `rm`.
-
-
-### Command Reference
-
-#### `pwm create <secret_name>`
-
-Creates a new secret. The name may include letters, numbers and `/` for
-subdirectories, but it **cannot be entirely numeric**. Numeric names would be
-interpreted as an index by other commands and are therefore disallowed.
-
-You'll be prompted to enter:
-
-- URL (optional)
-- Username
-- Password (enter `a` to auto-generate a secure password)
-- Description (optional)
-
-```bash
-pwm create github
-```
-
-#### `pwm <secret_name>`
-
-Retrieves and displays a secret.
-
-```bash
-pwm github
-```
-
-Output:
-
-```
-Name: github
-Url: https://github.com
-Username: your_username
-Password: your_password
-Description: My GitHub account
-```
-
-#### `pwm cp <secret_name>`
-
-Copies the password of a secret to your clipboard.
-
-```bash
-pwm cp github
-# Password copied to clipboard
-```
-
-#### `pwm ls`
-
-Lists all secrets stored in your storage location as a tree structure.
+`pwm ls` prints a tree view with 1-based numeric indices.
 
 ```bash
 pwm ls
-
-# Output:
 # /home/username/.pwm
-# ├── github
-# ├── gmail
-# └── twitter
+# ├── {1} github
+# ├── {2} gmail
+# └── {3} twitter
 ```
 
-#### `pwm rm <secret_name>`
+These indices can be used anywhere a secret identifier is accepted (`pwm`, `cp`, `rm`, `update`).
 
-Deletes a secret permanently.
+### Command Reference
+
+#### Argument Resolution (`name|index`)
+
+When a command accepts `<name|index>`, `pwm` resolves the argument using these rules:
+
+- Digits-only input is treated as an index.
+- Index parsing uses `strconv.ParseInt` (base 10, 64-bit).
+- Valid index range is `1..N` where `N` is the number of stored secrets.
+- Out-of-range values return `index out of range (1..N)`.
+- Overflow values return `invalid index: number too large`.
+- Non-numeric input is treated as a secret name.
+
+#### `pwm <name|index>`
+
+Reads, decrypts, and prints a secret.
+
+#### `pwm create <name>`
+
+Creates a new secret by prompting for:
+
+- URL
+- Username
+- Password (type `a` to auto-generate)
+- Description
+
+Notes:
+
+- Secret names cannot be numeric-only.
+- Use plain names such as `github`, `gmail`, `work_vpn`.
+
+#### `pwm cp <name|index>`
+
+Decrypts the secret and copies its password to the clipboard.
+
+#### `pwm ls`
+
+Lists secrets from the storage directory as a numbered tree.
+
+#### `pwm rm <name|index>`
+
+Permanently deletes a secret.
+
+#### `pwm update <name|index>`
+
+Updates an existing secret in place.
+
+- Prompts each field with current value
+- Press Enter to keep a field unchanged
+- Password prompt supports `a` for auto-generation
+- Writes through a temporary file and atomically replaces the original file
+- Restores the original modification time so list index order stays stable
+
+#### `pwm --location <dir> ...`
+
+Overrides the default storage directory for a command.
+
+Examples:
 
 ```bash
-pwm rm old_service
-# Removed secret: old_service
-```
-
-#### `pwm update <secret_name|index>`
-
-Updates an existing secret's fields (URL, username, password, description). You'll be prompted to enter new values for each field. Press Enter to skip a field and keep its current value.
-
-```bash
-# Update by name
-pwm update github
-
-# Update by numeric index
-pwm update 2
-
-# Example session:
-# Updating secret: github
-# (Press Enter to skip a field)
-#
-# URL [https://github.com]: https://new-github-url.com
-# Username [old_user]: 
-# Password [***]: new_secure_password
-# Description [My GitHub account]: Updated GitHub account
-# Secret updated successfully: github
-```
-
-**Index Preservation**: The secret maintains its original index position (from `pwm ls`) after an update. Modification times are preserved so updated secrets don't move in the list.
-
-**Atomic Updates**: The update operation writes to a temporary file and atomically replaces the original file to prevent corruption if the process is interrupted.
-
-#### `pwm --help`
-
-Shows help information and available commands.
-
-#### Custom Storage Location
-
-By default, secrets are stored in `~/.pwm`. You can specify a different location using the `--location` flag:
-
-```bash
-pwm --location /path/to/custom/location create my_secret
-pwm --location /path/to/custom/location ls
-pwm --location /path/to/custom/location my_secret
+pwm --location /path/to/vault ls
+pwm --location /path/to/vault create github
+pwm --location /path/to/vault cp github
 ```
 
 ## Configuration
 
+### `PWM_CIPHER_KEY`
+
+- Required environment variable
+- Must be exactly 32 characters
+- Used for all encrypt/decrypt operations
+
 ### Storage Location
 
-The default storage location is `~/.pwm`. This can be customized using the `--location` flag:
+- Default: `~/.pwm`
+- Override per command with `--location`
+
+Example alias:
 
 ```bash
-pwm --location ~/.my_passwords ls
+alias pwm-work='pwm --location ~/.pwm-work'
+pwm-work ls
 ```
-
-This applies to that specific command. To use a custom location permanently, you can create an alias:
-
-```bash
-alias pwm_custom='pwm --location ~/.my_passwords'
-pwm_custom ls
-```
-
-### Cipher Key
-
-Your cipher key is read from the `PWM_CIPHER_KEY` environment variable. It must be exactly **32 characters** long and
-is used as the AES encryption key for all encrypt/decrypt operations.
-
-The cipher key is **never stored** by `pwm`. If you lose your cipher key, you will not be able to decrypt your secrets.
 
 ## Security
 
-### Important Security Notes
-
-- The `PWM_CIPHER_KEY` environment variable must be set and kept secure. Anyone with access to this key and your
-  `~/.pwm` directory can decrypt your secrets.
-- All sensitive fields (URL, username, password, and description) are encrypted—not just the password.
-
-### Best Practices
-
-1. **Protect Your Cipher Key**: Store your `PWM_CIPHER_KEY` securely. Avoid committing it to version control or sharing
-   it.
-2. **Protect Your Storage Directory**: The `~/.pwm` directory contains encrypted data. Keep it secure and don't share
-   it.
-3. **Keep Go Updated**: Make sure you're using an up-to-date version of Go to benefit from the latest security patches.
-4. **System Security**: This tool is only as secure as your system. If your computer is compromised, your secrets may be
-   at risk.
-
-### Encryption Details
-
-- **Algorithm**: AES (Advanced Encryption Standard)
-- **Padding**: PKCS7
-- **Key**: User-configurable via the `PWM_CIPHER_KEY` environment variable (32 characters / 256-bit)
-- **Encrypted Fields**: URL, Username, Password, Description
-- **Storage Format**: Hex-encoded ciphertext in JSON files
+- Anyone with both your `PWM_CIPHER_KEY` and storage directory can decrypt your secrets.
+- Keep your environment, shell history, and local storage secure.
+- Do not commit `PWM_CIPHER_KEY` to source control.
+- If you lose the key, stored secrets cannot be decrypted.
 
 ## Project Structure
 
-```
+```text
 pwm/
-├── main.go                 # Entry point
-├── go.mod                  # Go module definition
-├── go.sum                  # Dependency checksums
-├── Makefile                # Cross-platform build scripts
-├── README.md               # This file
-├── LICENSE                 # GNU GPLv3 License
-├── .github/
-│   └── workflows/
-│       ├── ci.yml          # CI pipeline (build on push/PR)
-│       └── release.yml     # Release pipeline (build & publish on tag)
+├── main.go
+├── go.mod
+├── go.sum
+├── Makefile
+├── README.md
+├── LICENSE
 ├── cmd/
-│   ├── root.go             # Root command, flags, and cipher key loading
-│   ├── create.go           # Create command
-│   ├── ls.go               # List command
-│   ├── cp.go               # Copy command
-│   ├── rm.go               # Remove command
-│   └── pwm.go              # Core command implementations
-└── internal/
-    ├── crypto/
-    │   └── crypto.go       # AES encryption/decryption and PKCS7 padding
-    ├── helpers/
-    │   ├── inputs.go       # User input handling (text & secret input)
-    │   └── outputs.go      # Output helpers (info, warn, error)
-    └── models/
-        └── secret.go       # Secret data model, encrypt/decrypt methods
+│   ├── root.go        # root command and global flags
+│   ├── pwm.go         # name/index argument resolution
+│   ├── create.go
+│   ├── ls.go
+│   ├── cp.go
+│   ├── rm.go
+│   └── update.go
+├── internal/
+│   ├── crypto/        # encryption/decryption helpers
+│   ├── models/        # Secret model
+│   ├── helpers/       # input/output helpers
+│   ├── store/         # filesystem storage abstraction
+│   └── secrets/       # create/get/list/copy/remove/update service methods
+└── .github/workflows/
+    ├── ci.yml
+    └── release.yml
 ```
 
 ## Development
 
 ### Dependencies
 
-- **[github.com/spf13/cobra](https://github.com/spf13/cobra)**: CLI framework
-- **[github.com/SpyrosMoux/passwdgen](https://github.com/SpyrosMoux/passwdgen)**: Password auto-generation
-- **[golang.design/x/clipboard](https://pkg.go.dev/golang.design/x/clipboard)**: Clipboard integration
-- **[golang.org/x/term](https://pkg.go.dev/golang.org/x/term)**: Terminal handling for secret input
+- `github.com/spf13/cobra`
+- `github.com/SpyrosMoux/passwdgen`
+- `golang.design/x/clipboard`
+- `golang.org/x/term`
 
-Install dependencies:
+Install/update dependencies:
 
 ```bash
 go mod tidy
 ```
 
-### Building
-
-```bash
-# Build for all platforms
-make build
-
-# Or build with Go directly
-go build -o bin/pwm .
-```
-
-### Running Tests
+Run tests:
 
 ```bash
 go test ./...
 ```
 
+Build all release binaries:
+
+```bash
+make build
+```
+
 ### CI/CD
 
-The project uses GitHub Actions for continuous integration and releases:
+GitHub Actions workflows:
 
-- **CI** (`.github/workflows/ci.yml`): Builds on every push to `main` and on pull requests across all supported
-  platforms.
-- **Release** (`.github/workflows/release.yml`): On tagged pushes (`v*`), builds for all platforms, packages archives,
-  generates SHA-256 checksums, and creates a GitHub Release with all assets.
+- `ci.yml`: builds all supported targets on push to `main` and pull requests
+- `release.yml`: on `v*` tags, builds and packages artifacts, generates checksums, and creates a GitHub Release
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0.
+
+See `LICENSE` for details.
 
 ## Author
 
-Created by Spyros Mouchlianitis
+Created by Spyros Mouchlianitis.
 
 ## Contributing
 
-Contributions are welcome! Feel free to open an issue or submit a pull request.
+Contributions are welcome via issues and pull requests.
