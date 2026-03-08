@@ -9,9 +9,30 @@ permissions:
     contents: read
 
 jobs:
+    test:
+        name: Test
+        runs-on: ubuntu-24.04
+
+        steps:
+            -   uses: actions/checkout@v4
+
+            -   uses: actions/setup-go@v5
+                with:
+                    go-version-file: go.mod
+                    cache: true
+
+            -   name: Install Linux deps (X11 headers)
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libx11-dev libxext-dev
+
+            -   name: Run tests
+                run: make test
+
     build:
         name: Build ${{ matrix.name }}
         runs-on: ${{ matrix.runs_on }}
+        needs: [ test ]
 
         strategy:
             fail-fast: false
