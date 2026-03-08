@@ -12,6 +12,10 @@ bin:
 tidy:
 	go mod tidy
 
+.PHONY: test
+test:
+	go test ./...
+
 .PHONY: build-linux
 build-linux: bin
 	GOOS=linux GOARCH=amd64 go build -o $(BIN)/$(APP)-linux-amd64 $(PKG)
